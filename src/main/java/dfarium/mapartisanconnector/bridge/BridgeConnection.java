@@ -153,6 +153,10 @@ public final class BridgeConnection extends SimpleChannelInboundHandler<WebSocke
         try {
             switch (type) {
                 case "openSession" -> session.openSession(this);
+                case "status" -> {
+                    requireSession(json);
+                    session.status(this);
+                }
                 case "snapshotBegin" -> onSnapshotBegin(json);
                 case "snapshotEnd" -> onSnapshotEnd(json);
                 case "ping" -> {

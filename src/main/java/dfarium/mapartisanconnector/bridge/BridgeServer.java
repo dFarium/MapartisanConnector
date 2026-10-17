@@ -16,6 +16,7 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpObjectAggregator;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
@@ -131,6 +132,8 @@ public final class BridgeServer {
                     Unpooled.copiedBuffer(reason, CharsetUtil.UTF_8));
             response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; charset=utf-8");
             response.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.content().readableBytes());
+            // The socket is closed after the response; tell the client not to reuse it.
+            response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.CLOSE);
             ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
         }
     }

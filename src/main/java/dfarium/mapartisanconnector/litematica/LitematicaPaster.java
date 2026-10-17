@@ -32,6 +32,7 @@ public final class LitematicaPaster {
     private static final String PLACEMENT_NAME = "MapArtisan preview";
     private static final long STALL_WARNING_NANOS = 30_000_000_000L;
     public static final String WORLD_CLOSED = "world closed during the paste";
+    public static final String DIMENSION_CHANGED = "dimension changed";
 
     public interface Listener {
         void onApplied(PasteReport report);
@@ -66,11 +67,33 @@ public final class LitematicaPaster {
     private boolean stallWarned;
 
     public void setOrigin(BlockPos origin, ResourceKey<Level> dimension) {
+        setOrigin(origin, dimension, null);
+    }
+
+    /**
+     * Starts a new reserved area. Blocks pasted in the previous one stay in the world.
+     * With occupied bounds, the first paste also covers them, replacing what is there with air.
+     */
+    public void setOrigin(BlockPos origin, ResourceKey<Level> dimension, Bounds occupied) {
         requireIdle();
-        // A new origin starts a new reserved area; blocks pasted in the previous one stay in the world.
         resetSession(true);
         this.origin = origin.immutable();
         this.dimension = dimension;
+        this.dirty = occupied;
+        this.needsResync = occupied != null;
+    }
+
+    /**
+     * After a paste that finished but does not match the structure: anything in the volume
+     * may be wrong, so the next paste covers all of it again.
+     */
+    public void markNeedsResync(Bounds volume) {
+        dirty = dirty == null ? volume : dirty.union(volume);
+        needsResync = true;
+    }
+
+    public boolean needsResync() {
+        return needsResync;
     }
 
     /** Starts pasting the structure. Throws IllegalStateException when the paste cannot start. */
@@ -172,7 +195,7 @@ public final class LitematicaPaster {
         }
         if (!client.level.dimension().equals(dimension)) {
             cancel(paste.task());
-            finish(paste, "dimension changed");
+            finish(paste, DIMENSION_CHANGED);
             resetSession(true);
             message("§cDimension changed: session invalidated.");
             return;
