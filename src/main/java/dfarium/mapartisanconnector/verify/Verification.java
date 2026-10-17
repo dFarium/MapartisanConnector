@@ -1,4 +1,4 @@
-package dfarium.mapartisanconnector.test;
+package dfarium.mapartisanconnector.verify;
 
 import dfarium.mapartisanconnector.litematica.LitematicaPaster;
 import dfarium.mapartisanconnector.structure.Bounds;
@@ -28,18 +28,18 @@ public final class Verification {
         IntegratedServer server = mc.getSingleplayerServer();
 
         if (paster.isPasting()) {
-            future.completeExceptionally(new IllegalStateException("Hay un pegado activo; verifica cuando termine"));
+            future.completeExceptionally(new IllegalStateException("A paste is running; verify when it finishes"));
             return future;
         }
         if (structure == null || server == null) {
-            future.completeExceptionally(new IllegalStateException("No hay ninguna revisión aplicada en esta sesión"));
+            future.completeExceptionally(new IllegalStateException("No revision has been applied in this session"));
             return future;
         }
 
         server.execute(() -> {
             ServerLevel level = server.getLevel(dimension);
             if (level == null) {
-                mc.execute(() -> future.completeExceptionally(new IllegalStateException("La dimensión ya no existe")));
+                mc.execute(() -> future.completeExceptionally(new IllegalStateException("The dimension no longer exists")));
                 return;
             }
             AreaVerifier.Result result = AreaVerifier.verify(level, origin, volume, structure);

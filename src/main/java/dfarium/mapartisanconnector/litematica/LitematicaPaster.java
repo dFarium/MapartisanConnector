@@ -31,7 +31,7 @@ public final class LitematicaPaster {
     private static final String REGION = "mapartisan";
     private static final String PLACEMENT_NAME = "MapArtisan preview";
     private static final long STALL_WARNING_NANOS = 30_000_000_000L;
-    private static final String WORLD_CLOSED = "mundo cerrado durante el pegado";
+    public static final String WORLD_CLOSED = "world closed during the paste";
 
     public interface Listener {
         void onApplied(PasteReport report);
@@ -77,13 +77,13 @@ public final class LitematicaPaster {
     public void paste(BuildStructure structure, Listener listener) {
         requireIdle();
         if (origin == null) {
-            throw new IllegalStateException("Primero define el origen con /mapartisan test origin");
+            throw new IllegalStateException("Set the origin first with /mapartisan test origin");
         }
         if (!mc.hasSingleplayerServer() || mc.level == null || mc.player == null) {
-            throw new IllegalStateException("Solo funciona en un mundo singleplayer");
+            throw new IllegalStateException("Only works in a singleplayer world");
         }
         if (!mc.level.dimension().equals(dimension)) {
-            throw new IllegalStateException("El origen pertenece a otra dimensión");
+            throw new IllegalStateException("The origin belongs to another dimension");
         }
         if (!mc.player.isCreative()) {
             throw new IllegalStateException("Hace falta modo creativo");
@@ -108,7 +108,7 @@ public final class LitematicaPaster {
 
             @Override
             public void onTaskAborted() {
-                finish(paste, mc.level == null ? WORLD_CLOSED : "tarea retirada del scheduler de Litematica");
+                finish(paste, mc.level == null ? WORLD_CLOSED : "task removed from the Litematica scheduler");
             }
         });
 
@@ -172,9 +172,9 @@ public final class LitematicaPaster {
         }
         if (!client.level.dimension().equals(dimension)) {
             cancel(paste.task());
-            finish(paste, "cambio de dimensión");
+            finish(paste, "dimension changed");
             resetSession(true);
-            message("§cCambio de dimensión: sesión invalidada.");
+            message("§cDimension changed: session invalidated.");
             return;
         }
 
@@ -190,28 +190,28 @@ public final class LitematicaPaster {
             stallWarned = true;
             String reason = task.blockedReason();
             LOGGER.warn("Paste stalled for 30 s with {} chunks pending: {}", pending, reason);
-            message("§ePegado sin avance hace 30 s (" + pending + " chunks pendientes): " + reason);
+            message("§ePaste has not progressed for 30 s (" + pending + " chunks pending): " + reason);
         }
     }
 
     public String status() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Origen: ").append(origin == null ? "sin definir" : origin.toShortString());
-        sb.append(" | Última aplicada: ").append(lastApplied == null ? "ninguna" : lastApplied.name());
+        sb.append("Origin: ").append(origin == null ? "not set" : origin.toShortString());
+        sb.append(" | Last applied: ").append(lastApplied == null ? "none" : lastApplied.name());
         if (needsResync) {
-            sb.append(" | §crequiere resincronización§r");
+            sb.append(" | §cneeds resync§r");
         }
         ActivePaste paste = active;
         if (paste == null) {
-            sb.append(" | Sin pegado activo");
+            sb.append(" | No paste running");
         } else {
             MapArtisanPasteTask task = paste.task();
-            sb.append(" | Pegando ").append(paste.structure().name()).append(": ")
+            sb.append(" | Pasting ").append(paste.structure().name()).append(": ")
                     .append(task.pendingCount()).append('/').append(task.totalChunks())
-                    .append(" chunks pendientes, reintentos ").append(task.retries());
+                    .append(" chunks pending, retries ").append(task.retries());
             String reason = task.blockedReason();
             if (reason != null) {
-                sb.append(" | Bloqueado: ").append(reason);
+                sb.append(" | Blocked: ").append(reason);
             }
         }
         return sb.toString();
@@ -300,7 +300,7 @@ public final class LitematicaPaster {
 
         LitematicaSchematic schematic = LitematicaSchematic.createEmptySchematic(area, "MapArtisan");
         if (schematic == null) {
-            throw new IllegalStateException("Litematica no pudo crear el esquema");
+            throw new IllegalStateException("Litematica could not create the schematic");
         }
 
         // Positions without a block stay air, which clears whatever earlier revisions left there.
@@ -331,14 +331,14 @@ public final class LitematicaPaster {
         int minY = origin.getY() + volume.minY();
         int maxY = origin.getY() + volume.maxY();
         if (mc.level.isOutsideBuildHeight(minY) || mc.level.isOutsideBuildHeight(maxY)) {
-            throw new IllegalStateException("El volumen Y " + minY + ".." + maxY + " no cabe en el mundo ("
+            throw new IllegalStateException("The volume Y " + minY + ".." + maxY + " does not fit in the world ("
                     + mc.level.getMinY() + ".." + mc.level.getMaxY() + ")");
         }
     }
 
     private void requireIdle() {
         if (active != null) {
-            throw new IllegalStateException("Hay un pegado activo; espera a que termine o usa /mapartisan test abort");
+            throw new IllegalStateException("A paste is running; wait for it to finish or use /mapartisan test abort");
         }
     }
 

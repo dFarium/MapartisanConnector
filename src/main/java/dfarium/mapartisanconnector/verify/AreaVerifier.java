@@ -1,4 +1,4 @@
-package dfarium.mapartisanconnector.test;
+package dfarium.mapartisanconnector.verify;
 
 import dfarium.mapartisanconnector.structure.Bounds;
 import dfarium.mapartisanconnector.structure.BuildStructure;
@@ -45,7 +45,7 @@ public final class AreaVerifier {
                     if (!actual.equals(want)) {
                         mismatches++;
                         if (samples.size() < MAX_SAMPLES) {
-                            samples.add(x + "," + y + "," + z + ": esperado " + want + ", hay " + actual);
+                            samples.add(x + "," + y + "," + z + ": expected " + want + ", found " + actual);
                         }
                     }
                 }

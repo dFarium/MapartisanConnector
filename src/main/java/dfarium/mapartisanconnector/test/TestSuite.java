@@ -3,6 +3,7 @@ package dfarium.mapartisanconnector.test;
 import dfarium.mapartisanconnector.litematica.LitematicaPaster;
 import dfarium.mapartisanconnector.structure.Bounds;
 import dfarium.mapartisanconnector.structure.BuildStructure;
+import dfarium.mapartisanconnector.verify.Verification;
 import fi.dy.masa.litematica.config.Configs;
 import fi.dy.masa.litematica.data.DataManager;
 import fi.dy.masa.litematica.schematic.LitematicaSchematic;
@@ -78,39 +79,39 @@ public final class TestSuite {
 
     public void start() {
         if (running) {
-            throw new IllegalStateException("La suite ya está en ejecución");
+            throw new IllegalStateException("The suite is already running");
         }
         if (paster.origin() == null) {
-            throw new IllegalStateException("Primero define el origen con /mapartisan test origin");
+            throw new IllegalStateException("Set the origin first with /mapartisan test origin");
         }
         if (paster.isPasting()) {
-            throw new IllegalStateException("Hay un pegado activo");
+            throw new IllegalStateException("A paste is running");
         }
 
         steps = List.of(
-                new Step("A + verificación; la selección de Litematica no cambia", this::pasteAKeepsSelection),
-                new Step("B retira bloques altos y soportes", () -> pasteAndVerify("b")),
-                new Step("A de nuevo", () -> pasteAndVerify("a")),
+                new Step("A + verification; the Litematica selection does not change", this::pasteAKeepsSelection),
+                new Step("B removes tall blocks and supports", () -> pasteAndVerify("b")),
+                new Step("A again", () -> pasteAndVerify("a")),
                 new Step("flat (2D)", () -> pasteAndVerify("flat")),
-                new Step("max (volumen máximo)", () -> pasteAndVerify("max")),
-                new Step("A tras max (retira la escalera)", () -> pasteAndVerify("a")),
-                new Step("Actualizaciones de vecinos no alteran lo pegado", this::neighborUpdates),
-                new Step("Abortar antes del primer tick", this::abortImmediately),
-                new Step("Resincronizar con A tras el aborto", () -> pasteAndVerify("a")),
-                new Step("Abortar a mitad del pegado", this::abortMidPaste),
-                new Step("Resincronizar con B tras el aborto", () -> pasteAndVerify("b")),
-                new Step("Una selección ajena se conserva", this::foreignSelection),
-                new Step("Renderizado de Litematica desactivado (observación)", this::renderingDisabled),
-                new Step("Hojas persistentes y área estable tras 30 s", this::stableAfterWait),
+                new Step("max (maximum volume)", () -> pasteAndVerify("max")),
+                new Step("A after max (removes the staircase)", () -> pasteAndVerify("a")),
+                new Step("Neighbor updates do not change the pasted blocks", this::neighborUpdates),
+                new Step("Abort before the first tick", this::abortImmediately),
+                new Step("Resync with A after the abort", () -> pasteAndVerify("a")),
+                new Step("Abort halfway through the paste", this::abortMidPaste),
+                new Step("Resync with B after the abort", () -> pasteAndVerify("b")),
+                new Step("A foreign selection is kept", this::foreignSelection),
+                new Step("Litematica rendering disabled (observation)", this::renderingDisabled),
+                new Step("Persistent leaves and a stable area after 30 s", this::stableAfterWait),
                 // Last: it moves the origin away and back, which resets the session.
-                new Step("Área sin chunks cargados: espera, watchdog y aborto", this::unloadedArea));
+                new Step("Area without loaded chunks: wait, watchdog and abort", this::unloadedArea));
 
         running = true;
         failures = 0;
         summary.clear();
         suiteStart = System.nanoTime();
-        log("Inicio: " + steps.size() + " pasos, origen " + paster.origin().toShortString()
-                + ". Quédate en el centro del área y no pauses el juego.");
+        log("Start: " + steps.size() + " steps, origin " + paster.origin().toShortString()
+                + ". Stay in the middle of the area and do not pause the game.");
         runStep(0);
     }
 
@@ -123,7 +124,7 @@ public final class TestSuite {
             return;
         }
         if (client.level == null) {
-            stop("mundo cerrado");
+            stop("world closed");
             return;
         }
         ticks++;
@@ -170,12 +171,12 @@ public final class TestSuite {
             }
             Throwable cause = error instanceof CompletionException && error.getCause() != null ? error.getCause() : error;
             failures++;
-            record("§cFALLO§r", label, cause.getMessage(), millis);
+            record("§cFAIL§r", label, cause.getMessage(), millis);
             if (cause instanceof CheckFailed && !paster.isPasting()) {
                 runStep(index + 1);
             } else {
                 LOGGER.error("[suite] Unexpected failure in step {}", label, cause);
-                stop("fallo inesperado");
+                stop("unexpected failure");
             }
         });
     }
@@ -186,9 +187,9 @@ public final class TestSuite {
         SchematicPlacement selected = manager().getSelectedSchematicPlacement();
         return pasteAndVerify("a").thenApply(detail -> {
             if (manager().getSelectedSchematicPlacement() != selected) {
-                throw new CheckFailed("la selección de Litematica cambió; " + detail);
+                throw new CheckFailed("the Litematica selection changed; " + detail);
             }
-            return detail + "; selección intacta (" + (selected == null ? "ninguna" : selected.getName()) + ")";
+            return detail + "; selection unchanged (" + (selected == null ? "none" : selected.getName()) + ")";
         });
     }
 
@@ -199,7 +200,7 @@ public final class TestSuite {
         BlockPos origin = paster.origin();
         ResourceKey<Level> dimension = paster.dimension();
         if (server == null || structure == null) {
-            return CompletableFuture.failedFuture(new IllegalStateException("No hay ninguna revisión aplicada"));
+            return CompletableFuture.failedFuture(new IllegalStateException("No revision has been applied"));
         }
 
         // Highest block of the sand, carpet and leaves columns in the first rows.
@@ -239,7 +240,7 @@ public final class TestSuite {
         });
 
         return touched.thenCompose(count -> verify().thenApply(v ->
-                count + " bloques actualizados encima de arena, alfombra y hojas; " + v));
+                count + " blocks updated on top of sand, carpet and leaves; " + v));
     }
 
     private CompletableFuture<String> abortImmediately() {
@@ -247,9 +248,9 @@ public final class TestSuite {
         paster.abort();
         return paste.thenApply(o -> {
             if (o.applied()) {
-                throw new CheckFailed("max se aplicó pese al aborto inmediato");
+                throw new CheckFailed("max was applied despite the immediate abort");
             }
-            return "abortada (" + o.report().abortReason() + ") tras " + o.report().totalMillis() + " ms";
+            return "aborted (" + o.report().abortReason() + ") after " + o.report().totalMillis() + " ms";
         });
     }
 
@@ -270,9 +271,9 @@ public final class TestSuite {
         }).thenApply(o -> {
             if (o.applied()) {
                 // Not a failure: the paste can finish in fewer ticks than it takes to observe progress.
-                return "OBSERVACIÓN: max terminó antes de poder abortarla (" + describe(o.report()) + ")";
+                return "OBSERVATION: max finished before it could be aborted (" + describe(o.report()) + ")";
             }
-            return "abortada con " + pendingAtAbort[0] + "/" + pendingAtAbort[1] + " chunks pendientes ("
+            return "aborted with " + pendingAtAbort[0] + "/" + pendingAtAbort[1] + " chunks pending ("
                     + o.report().abortReason() + ")";
         });
     }
@@ -293,10 +294,10 @@ public final class TestSuite {
             SchematicPlacement selected = manager.getSelectedSchematicPlacement();
             boolean listed = manager.getAllSchematicsPlacements().contains(foreign);
             if (selected != foreign || !listed) {
-                throw new CheckFailed("colocación ajena " + (listed ? "presente" : "eliminada")
-                        + ", seleccionada: " + (selected == null ? "ninguna" : selected.getName()));
+                throw new CheckFailed("foreign placement " + (listed ? "present" : "removed")
+                        + ", selected: " + (selected == null ? "none" : selected.getName()));
             }
-            return detail + "; colocación ajena intacta y seleccionada";
+            return detail + "; foreign placement intact and selected";
         }).whenComplete((detail, error) -> {
             if (cleanups.remove(cleanup)) {
                 cleanup.run();
@@ -314,18 +315,18 @@ public final class TestSuite {
         String[] observed = new String[1];
         return delaySeconds(5).thenCompose(ignored -> {
             observed[0] = paste.isDone()
-                    ? "OBSERVACIÓN: el pegado terminó con el renderizado desactivado"
-                    : "esperando con " + paster.activePendingChunks() + "/" + paster.activeTotalChunks()
-                    + " chunks pendientes, motivo: " + paster.activeBlockedReason();
+                    ? "OBSERVATION: the paste finished with rendering disabled"
+                    : "waiting with " + paster.activePendingChunks() + "/" + paster.activeTotalChunks()
+                    + " chunks pending, reason: " + paster.activeBlockedReason();
             LOGGER.info("[suite] With rendering disabled: {}", observed[0]);
             cleanups.remove(restore);
             restore.run();
-            return withTimeout(paste, PASTE_TIMEOUT_SECONDS, "no terminó tras reactivar el renderizado");
+            return withTimeout(paste, PASTE_TIMEOUT_SECONDS, "did not finish after re-enabling rendering");
         }).thenCompose(o -> {
             if (!o.applied()) {
-                throw new CheckFailed("abortada: " + o.report().abortReason());
+                throw new CheckFailed("aborted: " + o.report().abortReason());
             }
-            return verify().thenApply(v -> observed[0] + "; tras reactivar: " + describe(o.report()) + "; " + v);
+            return verify().thenApply(v -> observed[0] + "; after re-enabling: " + describe(o.report()) + "; " + v);
         });
     }
 
@@ -344,17 +345,17 @@ public final class TestSuite {
         // Longer than the 30 s stall warning, so the watchdog line shows up in the log.
         return delaySeconds(32).thenCompose(ignored -> {
             if (paste.isDone()) {
-                return CompletableFuture.failedFuture(new CheckFailed("el pegado lejano no esperó"));
+                return CompletableFuture.failedFuture(new CheckFailed("the distant paste did not wait"));
             }
-            observed[0] = "esperaba con " + paster.activePendingChunks() + "/" + paster.activeTotalChunks()
-                    + " chunks pendientes, motivo: " + paster.activeBlockedReason();
+            observed[0] = "was waiting with " + paster.activePendingChunks() + "/" + paster.activeTotalChunks()
+                    + " chunks pending, reason: " + paster.activeBlockedReason();
             paster.abort();
-            return withTimeout(paste, 5, "no llegó la notificación de aborto");
+            return withTimeout(paste, 5, "the abort notification did not arrive");
         }).thenApply(o -> {
             if (o.applied()) {
-                throw new CheckFailed("se informó como aplicado; " + observed[0]);
+                throw new CheckFailed("reported as applied; " + observed[0]);
             }
-            return observed[0] + "; abortado (" + o.report().abortReason() + ")";
+            return observed[0] + "; aborted (" + o.report().abortReason() + ")";
         }).whenComplete((detail, error) -> {
             if (!paster.isPasting()) {
                 paster.setOrigin(home, dimension);
@@ -365,10 +366,10 @@ public final class TestSuite {
     // --- Helpers ---
 
     private CompletableFuture<String> pasteAndVerify(String name) {
-        return withTimeout(startPaste(name), PASTE_TIMEOUT_SECONDS, "el pegado de " + name + " no terminó")
+        return withTimeout(startPaste(name), PASTE_TIMEOUT_SECONDS, "the paste of " + name + " did not finish")
                 .thenCompose(o -> {
                     if (!o.applied()) {
-                        throw new CheckFailed(name + " abortada: " + o.report().abortReason());
+                        throw new CheckFailed(name + " aborted: " + o.report().abortReason());
                     }
                     return verify().thenApply(v -> describe(o.report()) + "; " + v);
                 });
@@ -397,10 +398,10 @@ public final class TestSuite {
     private CompletableFuture<String> verify() {
         return Verification.lastApplied(mc, paster).thenApply(r -> {
             if (r.mismatches() > 0) {
-                throw new CheckFailed(r.mismatches() + " diferencias de " + r.checked() + " posiciones; "
+                throw new CheckFailed(r.mismatches() + " differences in " + r.checked() + " positions; "
                         + String.join(" | ", r.samples()));
             }
-            return "área idéntica (" + r.checked() + " posiciones, verificadas en " + r.millis() + " ms)";
+            return "area matches (" + r.checked() + " positions, verified in " + r.millis() + " ms)";
         });
     }
 
@@ -410,7 +411,7 @@ public final class TestSuite {
                 return future;
             }
             paster.abort();
-            return CompletableFuture.failedFuture(new CheckFailed(message + " en " + seconds + " s"));
+            return CompletableFuture.failedFuture(new CheckFailed(message + " in " + seconds + " s"));
         });
     }
 
@@ -433,11 +434,11 @@ public final class TestSuite {
         area.addSubRegionBox(new Box(BlockPos.ZERO, BlockPos.ZERO, "foreign"), false);
         LitematicaSchematic schematic = LitematicaSchematic.createEmptySchematic(area, "MapArtisan test");
         if (schematic == null) {
-            throw new IllegalStateException("Litematica no pudo crear el esquema ajeno");
+            throw new IllegalStateException("Litematica could not create the foreign schematic");
         }
         schematic.getSubRegionContainer("foreign").set(0, 0, 0, Blocks.GLASS.defaultBlockState());
         SchematicPlacement placement = SchematicPlacement.createFor(schematic, paster.origin().offset(-4, 0, -4),
-                "MapArtisan test (colocación ajena)", true, true);
+                "MapArtisan test (foreign placement)", true, true);
         placement.setShouldBeSaved(false);
         return placement;
     }
@@ -447,8 +448,8 @@ public final class TestSuite {
     }
 
     private static String describe(LitematicaPaster.PasteReport r) {
-        return r.totalMillis() + " ms (holograma " + r.waitMillis() + ", pegado " + r.pasteMillis() + ", "
-                + r.chunks() + " chunks, reintentos " + r.retries() + ")";
+        return r.totalMillis() + " ms (hologram " + r.waitMillis() + ", paste " + r.pasteMillis() + ", "
+                + r.chunks() + " chunks, retries " + r.retries() + ")";
     }
 
     private void record(String status, String label, String detail, long millis) {
@@ -459,7 +460,7 @@ public final class TestSuite {
 
     private void finish() {
         long seconds = (System.nanoTime() - suiteStart) / 1_000_000_000L;
-        log("Fin en " + seconds + " s: " + (steps.size() - failures) + " OK, " + failures + " fallos.");
+        log("Done in " + seconds + " s: " + (steps.size() - failures) + " OK, " + failures + " failed.");
         LOGGER.info("[suite] Summary:");
         summary.forEach(line -> LOGGER.info("[suite]   {}", strip(line)));
         stop(null);
@@ -467,7 +468,7 @@ public final class TestSuite {
 
     private void stop(String reason) {
         if (reason != null) {
-            log("Detenida: " + reason);
+            log("Stopped: " + reason);
             paster.abort();
         }
         running = false;

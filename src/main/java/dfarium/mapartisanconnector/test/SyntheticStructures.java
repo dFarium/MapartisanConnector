@@ -31,7 +31,7 @@ public final class SyntheticStructures {
             case "b" -> revisionB();
             case "flat" -> flat();
             case "max" -> maxVolume();
-            default -> throw new IllegalArgumentException("Estructura desconocida: " + name);
+            default -> throw new IllegalArgumentException("Unknown structure: " + name);
         };
     }
 

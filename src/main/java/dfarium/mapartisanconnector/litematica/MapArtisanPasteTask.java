@@ -33,7 +33,7 @@ public final class MapArtisanPasteTask extends TaskPasteSchematicPerChunkBase {
     private volatile int retries;
     private volatile long firstReadyNanos;
     private volatile boolean cancelled;
-    private volatile String blockedReason = "esperando el primer tick del servidor";
+    private volatile String blockedReason = "waiting for the first server tick";
 
     public MapArtisanPasteTask(SchematicPlacement placement) {
         super(List.of(placement), new LayerRange(null), false);
@@ -139,18 +139,18 @@ public final class MapArtisanPasteTask extends TaskPasteSchematicPerChunkBase {
     /** Mirrors the conditions of TaskPasteSchematicPerChunkBase.canProcessChunk. */
     private String diagnose(ChunkPos pos) {
         if (!schematicWorld.getChunkSource().hasChunk(pos.x(), pos.z())) {
-            return "el holograma aún no cargó el chunk " + pos + " (¿jugador lejos?)";
+            return "the hologram has not loaded chunk " + pos + " yet (player too far?)";
         }
         if (PlacementManagerDaemonHandler.INSTANCE.hasAnyRebuildTasksFor(pos)) {
-            return "Litematica está reconstruyendo el holograma del chunk " + pos;
+            return "Litematica is rebuilding the hologram of chunk " + pos;
         }
         if (!areSurroundingChunksLoaded(pos, clientWorld, 1)) {
-            return "chunks del cliente alrededor de " + pos + " sin cargar (jugador lejos)";
+            return "client chunks around " + pos + " are not loaded (player too far)";
         }
         if (retries > 0) {
-            return "placeToWorldWithinChunk devolvió false " + retries + " veces";
+            return "placeToWorldWithinChunk returned false " + retries + " times";
         }
-        return "sin causa identificada en el chunk " + pos;
+        return "no identified cause in chunk " + pos;
     }
 
     public int totalChunks() {
