@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "mapartisan_connector",
+  "version": "${version}",
+  "name": "MapartisanConnector",
+  "description": "Live preview bridge between MapArtisan and Litematica.",
+  "authors": [],
+  "contact": {},
+  "license": "AGPL-3.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dfarium.mapartisanconnector.client.MapartisanConnectorClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "litematica": "${litematica_version}",
+    "malilib": "${malilib_version}"
+  }
+}
