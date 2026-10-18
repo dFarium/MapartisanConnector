@@ -14,7 +14,9 @@ import java.util.List;
 
 /** config/mapartisan_connector.json, read on every /mapartisan start so edits apply without restarting. */
 public record BridgeConfig(int port, List<String> allowedOrigins) {
+    /** The published MapArtisan plus the local dev and preview servers. */
     public static final BridgeConfig DEFAULT = new BridgeConfig(25590, List.of(
+            "https://mapartisan.dfarium.com",
             "http://localhost:5173", "http://127.0.0.1:5173",
             "http://localhost:4173", "http://127.0.0.1:4173"));
 

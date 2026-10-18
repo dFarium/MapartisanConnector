@@ -19,6 +19,15 @@ class HandshakeGuardTest {
     }
 
     @Test
+    void acceptsThePublishedSiteByDefault() {
+        assertNull(HandshakeGuard.reject(PATH, "127.0.0.1:25590", "https://mapartisan.dfarium.com", 25590, ORIGINS));
+        // Exact match only: no other scheme, subdomain or preview deployment.
+        assertNotNull(HandshakeGuard.reject(PATH, "127.0.0.1:25590", "http://mapartisan.dfarium.com", 25590, ORIGINS));
+        assertNotNull(HandshakeGuard.reject(PATH, "127.0.0.1:25590", "https://evil.mapartisan.dfarium.com", 25590, ORIGINS));
+        assertNotNull(HandshakeGuard.reject(PATH, "127.0.0.1:25590", "https://mapartisan.dfarium.com.evil.example", 25590, ORIGINS));
+    }
+
+    @Test
     void rejectsRebindingHosts() {
         assertNotNull(HandshakeGuard.reject(PATH, "evil.example:25590", "http://localhost:5173", 25590, ORIGINS));
         assertNotNull(HandshakeGuard.reject(PATH, "127.0.0.1", "http://localhost:5173", 25590, ORIGINS));
